@@ -1,0 +1,50 @@
+{
+  "name": "easyread",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build" : "electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^35.1.2",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.easyread.editor",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "fileAssociations": [
+        {
+          "ext": "md",
+          "name": "Markdown File",
+          "role": "Editor"
+        },
+        {
+          "ext": "txt",
+          "name": "Text File",
+          "role": "Editor"
+        }
+      ]
+    },
+    "extraResources": [
+      {
+        "from": "open-with.bat",
+        "to": "open-with.bat"
+      }
+    ],
+    "files": [
+      "**/*",
+      "!**/*.map"
+    ],
+    "directories": {
+      "output": "dist"
+    }
+  }
+
+}

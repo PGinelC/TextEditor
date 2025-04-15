@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeMirror Markdown Editor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/markdown/markdown.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/selection/active-line.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .button-bar {
+      margin-bottom: 10px;
+    }
+    .CodeMirror {
+      height: calc(100vh - 50px);
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="button-bar">
+    <span id="currentFile"></span>
+  </div>
+  <textarea id="editor"></textarea>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    const fs = require('fs');
+    const path = require('path');
+    
+    let currentFilePath = null;
+
+    // Initialize CodeMirror
+    var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      mode: "markdown",
+      lineNumbers: true,
+      theme: "dracula",
+      matchBrackets: true,
+      styleActiveLine: true,
+    });
+
+    // Listen for the 'open-file' event from the main process
+    ipcRenderer.on('open-file', (event, filePath) => {
+      loadFile(filePath);
+    });
+
+    // Function to load file content into CodeMirror
+    function loadFile(filePath) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        editor.setValue(content);
+        currentFilePath = filePath;
+        document.getElementById('currentFile').textContent = `Editing: ${path.basename(filePath)}`;
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert(`Error opening file: ${error.message}`);
+      }
+    }
+
+    ipcRenderer.on('save-triggered', () => {
+      const content = editor.getValue();
+
+      if (currentFilePath) {
+        // Save to the original file
+        try {
+          fs.writeFileSync(currentFilePath, content, 'utf8');
+          alert('File saved successfully!');
+        } catch (error) {
+          console.error('Error saving file:', error);
+          alert(`Error saving file: ${error.message}`);
+        }
+      } else {
+        // If no file is open, ask the main process to show a save dialog
+        ipcRenderer.send('save-dialog', content);
+      }
+    });
+
+    ipcRenderer.on('save-as-triggered', () => {
+      const content = editor.getValue();
+      ipcRenderer.send('save-dialog', content); // Re-use the existing save-dialog logic
+    });
+  </script>
+</body>
+</html>
